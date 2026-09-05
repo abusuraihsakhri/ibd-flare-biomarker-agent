@@ -1,6 +1,6 @@
 # Ibd Flare Biomarker Agent
 
-> **Domain:** Gastroenterology, Hepatology & Clinical Nutrition  
+> **Domain:** Gastroenterology, Hepatology & Clinical Nutrition
 > **Reference Guidelines & Standards:** `AASLD & ACG Clinical Practice Guidelines`
 
 <div align="center">
@@ -18,7 +18,7 @@
 
 ## 📖 What It Does
 
-**Ibd Flare Biomarker Agent** is an advanced analytical and computational platform implementing Fecal Calprotectin, Mayo Endoscopic Score & Biologic TDM Agent.
+**Ibd Flare Biomarker Agent** is an advanced analytical and computational platform implementing Fecal Calprotectin, Mayo Endoscopic Score & Biologic TDM Agent. It evaluates clinical measurements across specialized sub-agents and produces consensus dossiers with cryptographic audit trails.
 
 ---
 
@@ -35,38 +35,69 @@
 
 ---
 
-## 💻 CLI Quickstart & Usage
+## 🚀 Installation
 
-### 1. Guided Interactive Mode
 ```bash
-python cli.py
+# Clone the repository
+git clone https://github.com/abusuraihsakhri/ibd-flare-biomarker-agent.git
+cd ibd-flare-biomarker-agent
+
+# Install dependencies
+pip install fastapi uvicorn pydantic pytest
+
+# Optional: Set a persistent audit key (recommended for production)
+export AUDIT_SECRET_KEY="your-secure-random-key-here"
 ```
 
-### 2. Direct Parameterized Evaluation
+---
+
+## 💻 CLI Quickstart & Usage
+
+The CLI uses subcommands. Run `python cli.py --help` for full usage.
+
+### 1. Run a Single Audit
 ```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
+python cli.py audit --task-id TASK-001 --target KEY-01 --primary 28.5 --secondary 14.2 --status DISCORDANT
+```
+
+### 2. Query the Supervisory Chat
+```bash
+python cli.py chat "What is the system status?"
+```
+
+### 3. Batch Process CSV Records
+```bash
+python cli.py batch -i sample.csv -o results.csv
+```
+
+### 4. Verify Audit Trail Integrity
+```bash
+python cli.py verify-audit
+```
+
+### 5. Launch FastAPI REST Server
+```bash
+python cli.py serve --host 127.0.0.1 --port 8000
 ```
 
 ### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
+- `--task-id`: Unique task / case identifier
+- `--target`: Entity, patient key, or target identifier
+- `--primary`: Primary domain measurement or score (float)
+- `--secondary`: Secondary kinetic or confidence score (float)
+- `--status`: Status code or phenotype descriptor (e.g., NOMINAL, DISCORDANT)
+- `--critical`: Flag to trigger emergency escalation
 
-### Input Data Schema
+### Input Data Schema (for batch CSV)
 
 | Field | Description | Requirement |
 |:------|:------------|:------------|
-| `case_id` | Parameter / observation metric | Required |
-| `patient_synthetic_id` | Parameter / observation metric | Required |
-| `metric_primary` | Parameter / observation metric | Required |
-| `metric_secondary` | Parameter / observation metric | Required |
-| `is_stat` | Parameter / observation metric | Required |
-| `status_flag` | Parameter / observation metric | Required |
+| `task_id` | Unique task identifier | Required |
+| `target_identifier` | Entity or patient key | Required |
+| `primary_metric` | Primary measurement (float) | Required |
+| `secondary_metric` | Secondary measurement (float) | Optional |
+| `is_critical_flag` | Emergency escalation flag | Optional |
+| `status_descriptor` | Status code or phenotype | Optional |
 
 ---
 
@@ -91,7 +122,7 @@ pytest -v
 Execute high-throughput batch simulation benchmarks:
 
 ```bash
-python simulator.py --tasks 1000 --concurrency 8
+python simulator.py 1000
 ```
 
 ---
@@ -100,5 +131,41 @@ python simulator.py --tasks 1000 --concurrency 8
 
 ```bash
 docker build -t ibd-flare-biomarker-agent .
-docker run -p 8000:8000 ibd-flare-biomarker-agent
+docker run -p 8000:8000 -e AUDIT_SECRET_KEY="your-secure-key" ibd-flare-biomarker-agent
+```
+
+Or using Docker Compose:
+
+```bash
+AUDIT_SECRET_KEY="your-secure-key" docker-compose up -d
+```
+
+---
+
+## 📁 Project Structure
+
+```
+ibd-flare-biomarker-agent/
+├── agents/                  # Core agent package (supervisor, workers, models, security)
+│   ├── base.py             # PHI guard, HMAC audit trail, security exceptions
+│   ├── models.py           # Pydantic schemas and data definitions
+│   ├── supervisor.py       # Master orchestrator
+│   ├── workers.py          # Specialized domain worker agents
+│   ├── api.py              # FastAPI REST server
+│   ├── metrics.py          # Prometheus metrics exporter
+│   ├── learning.py         # Bayesian calibration engine
+│   ├── llm_factory.py      # LLM provider factory
+│   └── streamer.py         # WebSocket telemetry broadcaster
+├── tests/                  # Test suite
+│   ├── test_ibd_flare_biomarker_agent.py
+│   ├── test_enrichment.py
+│   └── test_ibd_sentinel.py
+├── cli.py                  # Command-line interface entry point
+├── ibd_sentinel.py         # Standalone IBD-Sentinel module
+├── enrichment.py           # Enrichment feature engines
+├── simulator.py            # High-throughput simulation benchmark
+├── web/index.html          # Operations console web UI
+├── Dockerfile              # Container build definition
+├── docker-compose.yml      # Multi-container orchestration
+└── pyproject.toml          # Project metadata and build configuration
 ```

@@ -14,10 +14,11 @@ import datetime
 import json
 import sys
 import uuid
+from enum import Enum
 from typing import Dict, Any, List, Optional
 
 
-class Severity(str):
+class Severity(str, Enum):
     INFO = "INFO"
     ADVISORY = "ADVISORY"
     WARNING = "WARNING"
@@ -69,7 +70,10 @@ class CalprotectinKineticsAgent:
     """Specialized Sub-Agent 1 for ibd-flare-biomarker-agent"""
     def evaluate(self, payload: Dict[str, Any]) -> List[AgentAlert]:
         alerts = []
-        val1 = float(payload.get("metric_primary", 15.0))
+        try:
+            val1 = float(payload.get("metric_primary", 15.0))
+        except (TypeError, ValueError):
+            val1 = 15.0
         if val1 > 20.0:
             alerts.append(
                 AgentAlert(
@@ -89,7 +93,10 @@ class EndoscopicSeverityScorerAgent:
     def evaluate(self, payload: Dict[str, Any]) -> List[AgentAlert]:
         alerts = []
         is_critical = bool(payload.get("critical_flag", False))
-        val2 = float(payload.get("metric_secondary", 5.0))
+        try:
+            val2 = float(payload.get("metric_secondary", 5.0))
+        except (TypeError, ValueError):
+            val2 = 5.0
         if is_critical or val2 > 12.0:
             alerts.append(
                 AgentAlert(
@@ -266,15 +273,23 @@ def main(argv=None):
         return 0
 
     if args.command == "batch":
-        with open(args.input, mode="r", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
-            fieldnames = list(reader.fieldnames or [])
-            rows = list(reader)
+        try:
+            with open(args.input, mode="r", encoding="utf-8-sig") as f:
+                reader = csv.DictReader(f)
+                fieldnames = list(reader.fieldnames or [])
+                rows = list(reader)
+        except FileNotFoundError:
+            print(f"Error: Input file '{args.input}' not found.", file=sys.stderr)
+            return 1
 
         out_fields = fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]
         out_rows = []
         for r in rows:
-            dossier = coordinator.audit_case(dict(r))
+            try:
+                dossier = coordinator.audit_case(dict(r))
+            except Exception as e:
+                print(f"Warning: Skipping row due to error: {e}", file=sys.stderr)
+                continue
             row_dict = dict(r)
             row_dict["overall_status"] = dossier["overall_status"]
             row_dict["total_alerts"] = dossier["total_alerts"]

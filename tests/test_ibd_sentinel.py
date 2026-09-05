@@ -1,3 +1,11 @@
+"""
+Automated Pytest Test Suite for ibd_sentinel (IBD-Sentinel: Fecal Calprotectin,
+Endoscopic Mayo & Harvey-Bradshaw Flare Agent).
+"""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import pytest
 from ibd_sentinel import CalprotectinKineticsAgent, EndoscopicSeverityScorerAgent, BiologicTroughAuditorAgent, IBDCoordinator, main
 

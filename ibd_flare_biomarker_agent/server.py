@@ -26,14 +26,14 @@ def create_app():
             status_flag: str = "DISCORDANT"
             is_stat: bool = True
             clinical_notes: str = ""
-            biomarkers: Dict[str, Any] = {}
+            biomarkers: Dict[str, Any] = Field(default_factory=dict)
 
         class ChatRequest(BaseModel):
             query: str
 
         @app.get("/health")
         def health():
-            return {"status": "HEALTHY", "system": "ibd-flare-biomarker-agent", "domain": "Gastroenterology", "version": "2.0.0-PRO"}
+            return {"status": "HEALTHY", "system": "ibd-flare-biomarker-agent", "domain": "Gastroenterology", "version": "2.0.0"}
 
         @app.post("/api/audit")
         def api_audit(req: AuditRequest):

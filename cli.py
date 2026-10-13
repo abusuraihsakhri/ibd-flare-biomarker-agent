@@ -12,6 +12,16 @@ from agents.base import AuditLogger
 supervisor = SystemSupervisor(model_provider="mock")
 
 
+def parse_boolean(value):
+    """Parse CSV booleans strictly; nonempty strings are not always True."""
+    normalized = str(value or "").strip().lower()
+    if normalized in ("1", "true", "yes"):
+        return True
+    if normalized in ("", "0", "false", "no"):
+        return False
+    raise ValueError("is_critical_flag must be true/false, yes/no, or 1/0")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="ibd-flare-biomarker-agent", description="Ibd Flare Biomarker Agent")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -56,7 +66,7 @@ def main(argv=None):
         dossier = supervisor.process_task(payload)
         print("=" * 80)
         print(f"  IBD FLARE BIOMARKER AGENT")
-        print(f"  Domain: Gastroenterology & Hepatology Systems | Standard: AASLD / ACG / Chicago Classification v4.0")
+        print(f"  Domain: Gastroenterology & Hepatology Systems | Standard: Unvalidated demonstration rules")
         print(f"  Dossier ID: {dossier.dossier_id} | Urgency: [{dossier.overall_urgency.value}]")
         print("=" * 80)
         for a in dossier.alerts:
@@ -99,7 +109,7 @@ def main(argv=None):
                     primary_metric=float(r.get("primary_metric", 15.0)),
                     secondary_metric=float(r.get("secondary_metric", 5.0)),
                     status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                    is_critical_flag=str(r.get("is_critical_flag", "")).lower() in ("true", "1", "yes"),
+                    is_critical_flag=parse_boolean(r.get("is_critical_flag", "")),
                 )
                 dossier = supervisor.process_task(payload)
             except (ValueError, TypeError) as e:

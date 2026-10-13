@@ -186,7 +186,7 @@ class IBDCoordinator:
         if "summary" in q or "status" in q:
             return f"IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent currently tracking {len(self.case_registry)} cases in local air-gapped memory."
         elif "guidelines" in q or "protocol" in q:
-            return "This software uses demonstration thresholds, not validated IBD guideline algorithms."
+            return "This software does not implement validated IBD clinical guidelines; its numerical limits are demonstration thresholds."
         else:
             return f"IBD-Sentinel demonstration is available for manual evaluations; continuous monitoring is not implemented."
 

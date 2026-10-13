@@ -15,6 +15,8 @@ class ClinicalDomainEngine:
 
     @classmethod
     def evaluate_primary_index(cls, value: float) -> Optional[Dict[str, Any]]:
+        if not math.isfinite(value):
+            raise ValueError("primary_metric must be finite")
         if value > cls.PRIMARY_BASELINE_LIMIT:
             return {
                 "title": "Primary Metric Threshold Exceeded",
@@ -25,6 +27,8 @@ class ClinicalDomainEngine:
 
     @classmethod
     def evaluate_secondary_kinetics(cls, value: float, is_stat: bool) -> Optional[Dict[str, Any]]:
+        if not math.isfinite(value):
+            raise ValueError("secondary_metric must be finite")
         if value > cls.SECONDARY_ALERT_LIMIT or is_stat:
             return {
                 "title": "STAT Kinetic Escalation Triggered",

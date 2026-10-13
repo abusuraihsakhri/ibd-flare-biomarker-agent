@@ -1,4 +1,4 @@
-name: Ibd Flare Biomarker Engine CI/CD & Security Verification
+name: Python and browser regression checks
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ master, main ]
 
 jobs:
-  test-and-audit:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:

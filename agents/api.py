@@ -34,6 +34,16 @@ def dashboard():
     return FileResponse(Path(__file__).resolve().parents[1] / "web" / "index.html")
 
 
+@app.get("/styles.css", include_in_schema=False)
+def dashboard_styles():
+    return FileResponse(Path(__file__).resolve().parents[1] / "web" / "styles.css", media_type="text/css")
+
+
+@app.get("/app.js", include_in_schema=False)
+def dashboard_script():
+    return FileResponse(Path(__file__).resolve().parents[1] / "web" / "app.js", media_type="text/javascript")
+
+
 @app.get("/health")
 def health():
     return {"status": "HEALTHY", "service": "ibd-flare-biomarker-agent", "domain": "Gastroenterology & Hepatology Systems", "rules": "UNVALIDATED_DEMONSTRATION", "version": "3.0.0-ENTERPRISE"}

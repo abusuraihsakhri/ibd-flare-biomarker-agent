@@ -1,10 +1,11 @@
 """
 FastAPI REST API Server for Ibd Flare Biomarker Agent.
 """
-from typing import Dict, Any, List
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
-from .base import AuditLogger, PHIGuard
+from .base import AuditLogger, SecurityException
 from .models import SystemTaskPayload, ConsensusDossier
 from .supervisor import SystemSupervisor
 
@@ -12,7 +13,7 @@ supervisor = SystemSupervisor(model_provider="mock")
 
 app = FastAPI(
     title="Ibd Flare Biomarker Agent API",
-    description="Enterprise Distributed Component Platform (Gastroenterology & Hepatology Systems)",
+    description="Local demonstration of generic rules; not a validated IBD clinical decision support system.",
     version="3.0.0-ENTERPRISE",
 )
 
@@ -21,9 +22,21 @@ class ChatRequest(BaseModel):
     query: str
 
 
+@app.exception_handler(SecurityException)
+def reject_identifier(request, exc):
+    return JSONResponse(
+        status_code=400, content={"detail": "Input contains a prohibited identifier."}
+    )
+
+
+@app.get("/", include_in_schema=False)
+def dashboard():
+    return FileResponse(Path(__file__).resolve().parents[1] / "web" / "index.html")
+
+
 @app.get("/health")
 def health():
-    return {"status": "HEALTHY", "service": "ibd-flare-biomarker-agent", "domain": "Gastroenterology & Hepatology Systems", "standard": "AASLD / ACG / Chicago Classification v4.0", "version": "3.0.0-ENTERPRISE"}
+    return {"status": "HEALTHY", "service": "ibd-flare-biomarker-agent", "domain": "Gastroenterology & Hepatology Systems", "rules": "UNVALIDATED_DEMONSTRATION", "version": "3.0.0-ENTERPRISE"}
 
 
 @app.get("/metrics")
@@ -46,8 +59,8 @@ def api_chat(req: ChatRequest):
     try:
         ans = supervisor.query_supervisory_chat(req.query)
         return {"response": ans}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except SecurityException:
+        raise HTTPException(status_code=400, detail="Input contains a prohibited identifier.")
 
 
 @app.get("/api/audit/logs")

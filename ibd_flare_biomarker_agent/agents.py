@@ -93,7 +93,7 @@ class IBDCoordinator:
             "stat_critical_alerts": stat_count,
             "warning_alerts": warn_count,
             "alerts": [a.to_dict() for a in all_alerts],
-            "guideline_standard": "ACG / AGA Clinical Guidelines & Chicago v4.0",
+            "guideline_standard": "Unvalidated demonstration rules",
             "consensus_summary": f"Multi-agent supervision completed across 3 sub-agents with status [{status.value}].",
         }
 
@@ -105,6 +105,6 @@ class IBDCoordinator:
         if "status" in q or "summary" in q:
             return f"IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent currently tracking {len(self.case_registry)} cases in on-premises memory."
         elif "guideline" in q or "standard" in q:
-            return "Active clinical surveillance operates under ACG / AGA Clinical Guidelines & Chicago v4.0 validated protocols."
+            return "This software demonstrates generic thresholds without clinical validation."
         else:
-            return f"IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent executive agent online. Zero-PHI air-gapped monitoring active."
+            return f"IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent demonstration ready; no PHI guarantee or continuous monitoring."

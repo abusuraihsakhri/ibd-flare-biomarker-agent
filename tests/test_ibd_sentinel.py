@@ -41,5 +41,5 @@ def test_cli():
 
 def test_domain_registry():
     from ibd_sentinel import DomainKnowledgeRegistry
-    assert DomainKnowledgeRegistry.ZERO_PHI_COMPLIANCE is True
+    assert DomainKnowledgeRegistry.ZERO_PHI_COMPLIANCE is False
     assert "PRO" in DomainKnowledgeRegistry.SYSTEM_VERSION

@@ -40,4 +40,6 @@ jobs:
         python -m ibd_flare_biomarker_agent.cli audit --case-id TEST --primary 1 --secondary 1
 
     - name: Check browser script syntax
-      run: node --check web/app.js
+      run: |
+        node --check web/app.js
+        node tests/browser_smoke.cjs

@@ -12,6 +12,7 @@ import argparse
 import csv
 import datetime
 import json
+import math
 import sys
 import uuid
 from enum import Enum
@@ -80,14 +81,22 @@ def parse_boolean(value: Any) -> bool:
     raise ValueError("Boolean value must be true/false, yes/no, or 1/0")
 
 
+def parse_finite_metric(value: Any, name: str) -> float:
+    """Never silently substitute nominal values for invalid metrics."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be numeric") from exc
+    if not math.isfinite(number):
+        raise ValueError(f"{name} must be finite")
+    return number
+
+
 class CalprotectinKineticsAgent:
     """Specialized Sub-Agent 1 for ibd-flare-biomarker-agent"""
     def evaluate(self, payload: Dict[str, Any]) -> List[AgentAlert]:
         alerts = []
-        try:
-            val1 = float(payload.get("metric_primary", 15.0))
-        except (TypeError, ValueError):
-            val1 = 15.0
+        val1 = parse_finite_metric(payload.get("metric_primary", 15.0), "metric_primary")
         if val1 > 20.0:
             alerts.append(
                 AgentAlert(
@@ -107,10 +116,7 @@ class EndoscopicSeverityScorerAgent:
     def evaluate(self, payload: Dict[str, Any]) -> List[AgentAlert]:
         alerts = []
         is_critical = parse_boolean(payload.get("critical_flag", False))
-        try:
-            val2 = float(payload.get("metric_secondary", 5.0))
-        except (TypeError, ValueError):
-            val2 = 5.0
+        val2 = parse_finite_metric(payload.get("metric_secondary", 5.0), "metric_secondary")
         if is_critical or val2 > 12.0:
             alerts.append(
                 AgentAlert(
@@ -197,7 +203,7 @@ coordinator = IBDCoordinator()
 def create_app():
     try:
         from fastapi import FastAPI
-        from pydantic import BaseModel
+        from pydantic import BaseModel, Field
 
         app = FastAPI(
             title="IBD-Sentinel Demonstration Rule Engine",
@@ -207,8 +213,8 @@ def create_app():
 
         class AuditRequest(BaseModel):
             case_id: Optional[str] = None
-            metric_primary: float = 15.0
-            metric_secondary: float = 5.0
+            metric_primary: float = Field(15.0, allow_inf_nan=False)
+            metric_secondary: float = Field(5.0, allow_inf_nan=False)
             critical_flag: bool = False
             status_text: str = "NORMAL"
 

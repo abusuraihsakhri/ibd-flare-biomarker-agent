@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent
-Integrates fecal calprotectin (mcg/g), SES-CD, and Mayo endoscopic subscores with therapeutic drug monitoring (infliximab/vedolizumab troughs).
+IBD-Sentinel Demonstration Rule Engine
+Demonstrates generic numerical rules; does not calculate validated IBD biomarkers, scores, or therapeutic drug levels.
 
 Domain: Gastroenterology
 Author: Dr. Abu Suraih Sakhri
@@ -184,7 +184,7 @@ class IBDCoordinator:
     def query_assistant(self, user_query: str) -> str:
         q = user_query.strip().lower()
         if "summary" in q or "status" in q:
-            return f"IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent currently tracking {len(self.case_registry)} cases in local air-gapped memory."
+            return f"IBD-Sentinel Demonstration Rule Engine currently tracking {len(self.case_registry)} cases in local air-gapped memory."
         elif "guidelines" in q or "protocol" in q:
             return "This software does not implement validated IBD clinical guidelines; its numerical limits are demonstration thresholds."
         else:
@@ -200,9 +200,9 @@ def create_app():
         from pydantic import BaseModel
 
         app = FastAPI(
-            title="IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent",
-            description="Integrates fecal calprotectin (mcg/g), SES-CD, and Mayo endoscopic subscores with therapeutic drug monitoring (infliximab/vedolizumab troughs).",
-            version="1.0.0",
+            title="IBD-Sentinel Demonstration Rule Engine",
+            description="Demonstrates generic numerical rules; does not calculate validated IBD biomarkers, scores, or therapeutic drug levels.",
+            version="2.0.0",
         )
 
         class AuditRequest(BaseModel):
@@ -233,7 +233,7 @@ def create_app():
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="ibd-flare-biomarker-agent", description="IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent")
+    parser = argparse.ArgumentParser(prog="ibd-flare-biomarker-agent", description="IBD-Sentinel Demonstration Rule Engine")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Audit
@@ -325,7 +325,7 @@ def main(argv=None):
             import uvicorn
             app = create_app()
             if app:
-                print(f"Starting IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent on http://{args.host}:{args.port}")
+                print(f"Starting IBD-Sentinel Demonstration Rule Engine on http://{args.host}:{args.port}")
                 uvicorn.run(app, host=args.host, port=args.port)
         except ImportError:
             print("FastAPI / uvicorn not installed. Run 'pip install fastapi uvicorn'")

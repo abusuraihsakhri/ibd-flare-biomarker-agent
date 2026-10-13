@@ -145,3 +145,18 @@ def test_legacy_interfaces_reject_nonfinite_or_invalid_metrics():
         CalprotectinKineticsAgent().evaluate({"metric_primary": float("nan")})
     with pytest.raises(ValueError):
         ClinicalDomainEngine.evaluate_secondary_kinetics(float("inf"), False)
+
+
+def test_concurrent_audit_writes_preserve_valid_chain():
+    from concurrent.futures import ThreadPoolExecutor
+
+    audit = AuditTrail(secret_key="synthetic-test-key")
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        entries = list(pool.map(
+            lambda number: audit.log("test", "worker", "EVENT", {"id": number}),
+            range(120),
+        ))
+    assert len(entries) == 120
+    assert len(audit.get_trail()) == 120
+    assert len({entry["current_hash"] for entry in entries}) == 120
+    assert audit.verify_integrity()

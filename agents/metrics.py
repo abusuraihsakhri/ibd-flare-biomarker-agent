@@ -2,11 +2,13 @@
 Prometheus Operational Metrics Exporter for ibd-flare-biomarker-agent.
 """
 import time
+import threading
 from typing import Dict, Any
 
 class SystemMetricsCollector:
     def __init__(self):
         self.system_name = "ibd-flare-biomarker-agent"
+        self._lock = threading.Lock()
         self.tasks_total = 0
         self.critical_alerts_total = 0
         self.elevated_alerts_total = 0
@@ -16,6 +18,10 @@ class SystemMetricsCollector:
         self.processing_latency_sum = 0.0
 
     def record_task(self, urgency: str, duration_sec: float):
+        with self._lock:
+            self._record_task_unlocked(urgency, duration_sec)
+
+    def _record_task_unlocked(self, urgency: str, duration_sec: float):
         self.tasks_total += 1
         self.processing_latency_sum += duration_sec
         self.audit_blocks_total += 1
@@ -28,9 +34,14 @@ class SystemMetricsCollector:
             self.routine_tasks_total += 1
 
     def record_phi_block(self):
-        self.phi_blocks_total += 1
+        with self._lock:
+            self.phi_blocks_total += 1
 
     def export_prometheus_text(self) -> str:
+        with self._lock:
+            return self._export_unlocked()
+
+    def _export_unlocked(self) -> str:
         avg_latency = self.processing_latency_sum / max(1, self.tasks_total)
         sys_lbl = self.system_name
         p_lines = [

@@ -1,7 +1,7 @@
 """
 Clinical Data Models & Enums for IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent.
 Domain: Gastroenterology
-Standard: ACG / AGA Clinical Guidelines & Chicago v4.0
+Standard: Unvalidated demonstration rules
 """
 import datetime
 from dataclasses import dataclass, field
@@ -43,7 +43,7 @@ class AgentAlert:
     title: str
     clinical_finding: str
     actionable_recommendation: str
-    guideline_citation: str = "ACG / AGA Clinical Guidelines & Chicago v4.0"
+    guideline_citation: str = "Unvalidated demonstration rules"
     timestamp: str = field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:

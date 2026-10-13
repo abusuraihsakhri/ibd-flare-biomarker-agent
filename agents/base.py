@@ -1,5 +1,5 @@
 """
-Enterprise Security, PHI Outbound Guard, and HMAC-SHA256 Audit Trail.
+Heuristic identifier screening and in-memory HMAC-SHA256 audit trail.
 
 """
 import os
@@ -13,7 +13,6 @@ import logging
 import copy
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ PHI_PATTERNS = [
 
 
 class SecurityException(Exception):
-    """Raised when outbound data violates HIPAA Safe Harbor or contains raw PHI."""
+    """Raised when an input matches a common identifier pattern (not full de-identification)."""
     pass
 
 

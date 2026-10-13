@@ -10,7 +10,7 @@ coordinator = IBDCoordinator()
 def create_app():
     try:
         from fastapi import FastAPI
-        from pydantic import BaseModel
+        from pydantic import BaseModel, Field
 
         app = FastAPI(
             title="IBD-Sentinel Demonstration Rule Engine",
@@ -21,8 +21,8 @@ def create_app():
         class AuditRequest(BaseModel):
             case_id: str = "CASE-2026-001"
             patient_synthetic_id: str = "SYNTH-PT-881"
-            primary_metric: float = 24.5
-            secondary_metric: float = 14.0
+            primary_metric: float = Field(24.5, allow_inf_nan=False)
+            secondary_metric: float = Field(14.0, allow_inf_nan=False)
             status_flag: str = "DISCORDANT"
             is_stat: bool = True
             clinical_notes: str = ""

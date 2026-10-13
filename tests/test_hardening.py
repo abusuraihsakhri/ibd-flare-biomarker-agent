@@ -106,3 +106,44 @@ def test_api_audit_and_phi_error_handling():
     metrics = client.get("/metrics")
     assert metrics.status_code == 200
     assert "system_tasks_total" in metrics.text
+
+
+def test_csv_boolean_parsing_and_batch(tmp_path):
+    import csv
+    from cli import main, parse_boolean
+
+    assert parse_boolean("False") is False
+    assert parse_boolean("YES") is True
+    with pytest.raises(ValueError):
+        parse_boolean("not-a-boolean")
+    source = tmp_path / "cases.csv"
+    target = tmp_path / "results.csv"
+    source.write_text(
+        "task_id,target_identifier,primary_metric,secondary_metric,is_critical_flag,status_descriptor\n"
+        "A,SYNTH-1,1,1,false,NOMINAL\n"
+        "B,SYNTH-2,1,1,true,NOMINAL\n",
+        encoding="utf-8",
+    )
+    assert main(["batch", "-i", str(source), "-o", str(target)]) == 0
+    with target.open(encoding="utf-8", newline="") as stream:
+        records = list(csv.DictReader(stream))
+    assert len(records) == 2
+    assert records[0]["overall_urgency"] == "ROUTINE"
+    assert records[1]["overall_urgency"] == "CRITICAL_STAT_PANIC"
+
+
+def test_legacy_interfaces_reject_nonfinite_or_invalid_metrics():
+    from ibd_sentinel import (
+        CalprotectinKineticsAgent, EndoscopicSeverityScorerAgent,
+    )
+    from ibd_flare_biomarker_agent.engine import ClinicalDomainEngine
+
+    assert EndoscopicSeverityScorerAgent().evaluate(
+        {"critical_flag": "False", "metric_secondary": 1}
+    ) == []
+    with pytest.raises(ValueError):
+        CalprotectinKineticsAgent().evaluate({"metric_primary": "not-a-number"})
+    with pytest.raises(ValueError):
+        CalprotectinKineticsAgent().evaluate({"metric_primary": float("nan")})
+    with pytest.raises(ValueError):
+        ClinicalDomainEngine.evaluate_secondary_kinetics(float("inf"), False)

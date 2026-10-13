@@ -114,7 +114,7 @@ class AuditTrail:
             "event_type", "payload_hash", "prev_hash", "current_hash",
         )
         for entry in self.logs:
-            if not isinstance(entry, dict) or any(
+            if not isinstance(entry, dict) or set(entry) != set(required) or any(
                 not isinstance(entry.get(k), str) for k in required
             ):
                 return False

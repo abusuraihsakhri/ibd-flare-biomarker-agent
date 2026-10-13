@@ -11,6 +11,7 @@ import hashlib
 import secrets
 import logging
 import copy
+import threading
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 
@@ -81,8 +82,13 @@ class AuditTrail:
                 "Set the AUDIT_SECRET_KEY environment variable for persistent audit integrity."
             )
         self.logs: List[Dict[str, Any]] = []
+        self._lock = threading.RLock()
 
     def log(self, actor: str, actor_tier: str, event_type: str, details: Dict[str, Any]) -> Dict[str, Any]:
+        with self._lock:
+            return self._log_unlocked(actor, actor_tier, event_type, details)
+
+    def _log_unlocked(self, actor: str, actor_tier: str, event_type: str, details: Dict[str, Any]) -> Dict[str, Any]:
         for value in (actor, actor_tier, event_type):
             assert_no_phi(value)
         payload_str = json.dumps(details, sort_keys=True, allow_nan=False)
@@ -107,6 +113,10 @@ class AuditTrail:
         return entry
 
     def verify_integrity(self) -> bool:
+        with self._lock:
+            return self._verify_integrity_unlocked()
+
+    def _verify_integrity_unlocked(self) -> bool:
         """Verify both chain links and every HMAC signature, not only pointers."""
         prev = "GENESIS_BLOCK_0000000000000000"
         required = (
@@ -131,7 +141,8 @@ class AuditTrail:
 
     def get_trail(self) -> List[Dict[str, Any]]:
         """Return a snapshot; callers cannot mutate stored audit records."""
-        return copy.deepcopy(self.logs)
+        with self._lock:
+            return copy.deepcopy(self.logs)
 
 
 GLOBAL_AUDIT = AuditTrail()

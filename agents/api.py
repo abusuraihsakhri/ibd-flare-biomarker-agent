@@ -3,11 +3,12 @@ FastAPI REST API Server for Ibd Flare Biomarker Agent.
 """
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 from .base import AuditLogger, SecurityException, ResourceLimitExceededException
 from .models import SystemTaskPayload, ConsensusDossier
 from .supervisor import SystemSupervisor
+from .metrics import GLOBAL_METRICS
 
 supervisor = SystemSupervisor(model_provider="mock")
 
@@ -24,6 +25,7 @@ class ChatRequest(BaseModel):
 
 @app.exception_handler(SecurityException)
 def reject_identifier(request, exc):
+    GLOBAL_METRICS.record_phi_block()
     return JSONResponse(
         status_code=400, content={"detail": "Input contains a prohibited identifier."}
     )
@@ -58,11 +60,7 @@ def health():
 
 @app.get("/metrics")
 def metrics():
-    return {
-        "dossiers_processed_total": len(supervisor.dossier_registry),
-        "audit_blocks_total": len(AuditLogger.get_trail()),
-        "system_status": "NOMINAL_OPTIMAL"
-    }
+    return Response(GLOBAL_METRICS.export_prometheus_text(), media_type="text/plain; version=0.0.4")
 
 
 @app.post("/api/audit")

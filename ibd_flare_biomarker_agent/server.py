@@ -1,5 +1,5 @@
 """
-FastAPI REST Application & Webhooks for IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent.
+FastAPI REST Application & Webhooks for IBD-Sentinel Demonstration Rule Engine.
 """
 from typing import Dict, Any, Optional
 from .models import ClinicalCasePayload
@@ -13,9 +13,9 @@ def create_app():
         from pydantic import BaseModel
 
         app = FastAPI(
-            title="IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent",
-            description="Integrates fecal calprotectin (mcg/g), SES-CD, and Mayo endoscopic subscores with therapeutic drug monitoring (infliximab/vedolizumab troughs).",
-            version="2.0.0-PRO",
+            title="IBD-Sentinel Demonstration Rule Engine",
+            description="Demonstrates generic numerical rules; does not calculate validated IBD biomarkers, scores, or therapeutic drug levels.",
+            version="2.0.0",
         )
 
         class AuditRequest(BaseModel):

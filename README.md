@@ -1,171 +1,73 @@
-# Ibd Flare Biomarker Agent
+# IBD Flare Biomarker Agent
 
-> **Domain:** Gastroenterology, Hepatology & Clinical Nutrition
-> **Reference Guidelines & Standards:** `AASLD & ACG Clinical Practice Guidelines`
+A local, reproducible demonstration of simple numeric and status-flag rules, with Python CLI, FastAPI endpoints, and an accessible browser rule explorer.
 
-<div align="center">
+**Important:** This repository does **not** calculate or validate fecal calprotectin activity, endoscopic Mayo/SES-CD scores, Harvey–Bradshaw scores, or biologic therapeutic drug monitoring. Its generic thresholds are not guideline-derived clinical cutoffs. **Do not use this software to diagnose, triage, or manage IBD or other clinical conditions.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+## What is implemented
 
-</div>
+- Three rule workers: a primary metric above **25**, secondary metric above **12** or an explicit critical flag, and descriptor-based anomaly detection.
+- An aggregate demonstration urgency (routine, elevated, critical) and detailed worker alerts.
+- Per-process HMAC-SHA256 chained audit entries; verification recomputes signatures and checks chain pointers.
+- Heuristic screening for *some* common identifiers, including MRN patterns, phone numbers and email addresses. **This is not full PHI detection, HIPAA de-identification, or an authorization system.**
+- Local FastAPI API, CSV batch CLI, an optional local server, and a static browser preview.
 
----
+These are generic software rules with unitless inputs; nothing here establishes biomarker-specific performance or clinical validity. Separate older entry points (`ibd_sentinel.py` and `ibd_flare_biomarker_agent.cli`) remain available for compatibility, but also use demonstration logic.
 
-## 📖 What It Does
+## Browser demonstration
 
-**Ibd Flare Biomarker Agent** is an advanced analytical and computational platform implementing Fecal Calprotectin, Mayo Endoscopic Score & Biologic TDM Agent. It evaluates clinical measurements across specialized sub-agents and produces consensus dossiers with cryptographic audit trails.
-
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-### 🔬 Core Algorithmic & Evaluation Engines
-
-- **`Severity`** — dedicated module for severity evaluation and state verification.
-- **`DomainKnowledgeRegistry`**: Enterprise domain rules, guideline matrices, and evidence benchmarks.
-- **`AgentAlert`** — dedicated module for agent alert evaluation and state verification.
-- **`CalprotectinKineticsAgent`**: Specialized Sub-Agent 1 for ibd-flare-biomarker-agent
-- **`EndoscopicSeverityScorerAgent`**: Specialized Sub-Agent 2 for ibd-flare-biomarker-agent
-- **`BiologicTroughAuditorAgent`**: Specialized Sub-Agent 3 for ibd-flare-biomarker-agent
-
----
-
-## 🚀 Installation
+Open `web/index.html` directly or serve the directory:
 
 ```bash
-# Clone the repository
-git clone https://github.com/abusuraihsakhri/ibd-flare-biomarker-agent.git
-cd ibd-flare-biomarker-agent
-
-# Install dependencies
-pip install fastapi uvicorn pydantic pytest
-
-# Optional: Set a persistent audit key (recommended for production)
-export AUDIT_SECRET_KEY="your-secure-random-key-here"
+python -m http.server 8080 --directory web
 ```
 
----
+The standalone browser explorer runs JavaScript equivalents of the three generic rules. It does not contact the API, generate signed audit hashes, persist input, or send data to a remote calculation service. The result is explicitly marked **UNSIGNED_LOCAL_RULE_PREVIEW**. Enter only synthetic identifiers.
 
-## 💻 CLI Quickstart & Usage
+The `web/` directory is also suitable for GitHub Pages. The repository includes a Pages publishing workflow; **do not assume a live deployment exists until the Pages build and URL have been verified**.
 
-The CLI uses subcommands. Run `python cli.py --help` for full usage.
+## Local Python installation and API
 
-### 1. Run a Single Audit
+Python 3.10–3.12 is exercised by the CI matrix (package metadata supports Python 3.9+).
+
 ```bash
-python cli.py audit --task-id TASK-001 --target KEY-01 --primary 28.5 --secondary 14.2 --status DISCORDANT
-```
-
-### 2. Query the Supervisory Chat
-```bash
-python cli.py chat "What is the system status?"
-```
-
-### 3. Batch Process CSV Records
-```bash
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install -e ".[api,test]"
+python cli.py audit --task-id TASK-001 --target SYNTH-01 --primary 28.5 --secondary 14.2 --status DISCORDANT
 python cli.py batch -i sample.csv -o results.csv
-```
-
-### 4. Verify Audit Trail Integrity
-```bash
 python cli.py verify-audit
-```
-
-### 5. Launch FastAPI REST Server
-```bash
 python cli.py serve --host 127.0.0.1 --port 8000
 ```
 
-### Parameter Reference
-- `--task-id`: Unique task / case identifier
-- `--target`: Entity, patient key, or target identifier
-- `--primary`: Primary domain measurement or score (float)
-- `--secondary`: Secondary kinetic or confidence score (float)
-- `--status`: Status code or phenotype descriptor (e.g., NOMINAL, DISCORDANT)
-- `--critical`: Flag to trigger emergency escalation
+Open `http://127.0.0.1:8000/` to use the same browser interface with server-side evaluation. The API exposes `POST /api/audit`, `POST /api/chat` (a **mock response, not real language-model inference**), `GET /api/audit/logs`, `GET /health`, `GET /metrics` (Prometheus text) and OpenAPI documentation at `/docs`.
 
-### Input Data Schema (for batch CSV)
+The top-level CLI accepts `task_id,target_identifier,primary_metric,secondary_metric,is_critical_flag,status_descriptor` CSV fields, with the first three required by convention. `sample.csv` follows this format. Older alternative CLIs use a different schema; `sample_legacy.csv` provides a matching example.
 
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `task_id` | Unique task identifier | Required |
-| `target_identifier` | Entity or patient key | Required |
-| `primary_metric` | Primary measurement (float) | Required |
-| `secondary_metric` | Secondary measurement (float) | Optional |
-| `is_critical_flag` | Emergency escalation flag | Optional |
-| `status_descriptor` | Status code or phenotype | Optional |
-
----
-
-## 🛡️ Security & Enterprise Architecture
-
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
-
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
+## Tests
 
 ```bash
-pytest -v
+python -m pytest -q
+node --check web/app.js
+node tests/browser_smoke.cjs
+python simulator.py 100
 ```
 
-Execute high-throughput batch simulation benchmarks:
+CI runs Python tests on 3.10, 3.11 and 3.12, CLI smoke tests, Python compilation, and browser JavaScript checks. No real-world clinical performance has been established by these tests.
+
+## Configuration, security and limitations
+
+`AUDIT_SECRET_KEY` sets the in-memory ledger's HMAC secret. Generate a random value for each deployment. Without it, the server creates an ephemeral key that cannot verify prior sessions. Audit records and evaluated dossiers reside **only in process memory**; there is no persistent evidence store or longitudinal review. The verifier can detect tampering with retained signed records, but not the removal of the entire in-memory ledger or data changed before hashing.
 
 ```bash
-python simulator.py 1000
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+docker compose up --build
 ```
 
----
+Docker Compose requires the secret and publishes the service only on `127.0.0.1:8000`. **Do not publish the API on the open internet:** it has no authentication, rate limiting, production access controls, or verified PHI handling. Do not submit real patient identifiers or sensitive health information.
 
-## 🐳 Container Deployment
+The adapter for `MODEL_PROVIDER=mock` is intentionally deterministic. External hosted/local model integrations are not implemented. The rule explorer does not run Python or Pyodide in the browser; JavaScript implements the small, explicitly identified preview only. No browser persistence is used. Interface code targets current standards-based browsers; cross-browser certification has not been performed.
 
-```bash
-docker build -t ibd-flare-biomarker-agent .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY="your-secure-key" ibd-flare-biomarker-agent
-```
+## Technology and license
 
-Or using Docker Compose:
-
-```bash
-AUDIT_SECRET_KEY="your-secure-key" docker-compose up -d
-```
-
----
-
-## 📁 Project Structure
-
-```
-ibd-flare-biomarker-agent/
-├── agents/                  # Core agent package (supervisor, workers, models, security)
-│   ├── base.py             # PHI guard, HMAC audit trail, security exceptions
-│   ├── models.py           # Pydantic schemas and data definitions
-│   ├── supervisor.py       # Master orchestrator
-│   ├── workers.py          # Specialized domain worker agents
-│   ├── api.py              # FastAPI REST server
-│   ├── metrics.py          # Prometheus metrics exporter
-│   ├── learning.py         # Bayesian calibration engine
-│   ├── llm_factory.py      # LLM provider factory
-│   └── streamer.py         # WebSocket telemetry broadcaster
-├── tests/                  # Test suite
-│   ├── test_ibd_flare_biomarker_agent.py
-│   ├── test_enrichment.py
-│   └── test_ibd_sentinel.py
-├── cli.py                  # Command-line interface entry point
-├── ibd_sentinel.py         # Standalone IBD-Sentinel module
-├── enrichment.py           # Enrichment feature engines
-├── simulator.py            # High-throughput simulation benchmark
-├── web/index.html          # Operations console web UI
-├── Dockerfile              # Container build definition
-├── docker-compose.yml      # Multi-container orchestration
-└── pyproject.toml          # Project metadata and build configuration
-```
+Python, Pydantic v2, optional FastAPI/Uvicorn, pytest, vanilla JavaScript, CSS, Docker and GitHub Actions. See [MIT license](LICENSE).

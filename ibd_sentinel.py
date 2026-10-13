@@ -307,7 +307,10 @@ def main(argv=None):
         for r in rows:
             try:
                 data = dict(r)
-                data["critical_flag"] = parse_boolean(data.get("critical_flag", False))
+                data["critical_flag"] = parse_boolean(
+                    data.get("critical_flag", data.get("is_stat", False))
+                )
+                data["status_text"] = data.get("status_text", data.get("status_flag", "NORMAL"))
                 dossier = coordinator.audit_case(data)
             except Exception as e:
                 print(f"Warning: Skipping row due to error: {e}", file=sys.stderr)

@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
-from .base import AuditLogger, SecurityException
+from .base import AuditLogger, SecurityException, ResourceLimitExceededException
 from .models import SystemTaskPayload, ConsensusDossier
 from .supervisor import SystemSupervisor
 
@@ -14,7 +14,7 @@ supervisor = SystemSupervisor(model_provider="mock")
 app = FastAPI(
     title="Ibd Flare Biomarker Agent API",
     description="Local demonstration of generic rules; not a validated IBD clinical decision support system.",
-    version="3.0.0-ENTERPRISE",
+    version="2.0.0",
 )
 
 
@@ -26,6 +26,13 @@ class ChatRequest(BaseModel):
 def reject_identifier(request, exc):
     return JSONResponse(
         status_code=400, content={"detail": "Input contains a prohibited identifier."}
+    )
+
+
+@app.exception_handler(ResourceLimitExceededException)
+def reject_oversized(request, exc):
+    return JSONResponse(
+        status_code=413, content={"detail": "Input exceeds the allowed scan length."}
     )
 
 
@@ -46,7 +53,7 @@ def dashboard_script():
 
 @app.get("/health")
 def health():
-    return {"status": "HEALTHY", "service": "ibd-flare-biomarker-agent", "domain": "Gastroenterology & Hepatology Systems", "rules": "UNVALIDATED_DEMONSTRATION", "version": "3.0.0-ENTERPRISE"}
+    return {"status": "HEALTHY", "service": "ibd-flare-biomarker-agent", "domain": "Gastroenterology & Hepatology Systems", "rules": "UNVALIDATED_DEMONSTRATION", "version": "2.0.0"}
 
 
 @app.get("/metrics")

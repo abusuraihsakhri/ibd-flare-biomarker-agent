@@ -28,12 +28,12 @@ class Severity(str, Enum):
 
 
 # ==============================================================================
-# ENRICHED CLINICAL KNOWLEDGE BASE & TELEMETRY ARBITRATION (Dr. Abu Suraih Sakhri)
+# GENERIC RULE DEMONSTRATION METADATA
 # ==============================================================================
 
 class DomainKnowledgeRegistry:
     """Demonstration rules; no guideline validation or HIPAA certification."""
-    SYSTEM_VERSION = "2.0.0-PRO-CLINICAL"
+    SYSTEM_VERSION = "2.0.0-DEMO"
     ZERO_PHI_COMPLIANCE = False
     HIPAA_SAFE_HARBOR = "NOT_ASSESSED"
 
@@ -104,7 +104,7 @@ class CalprotectinKineticsAgent:
                     agent_name="CalprotectinKineticsAgent",
                     severity=Severity.WARNING,
                     title="Primary Metric Threshold Discrepancy",
-                    details=f"Primary metric value ({val1:.1f}) exceeded standard clinical baseline.",
+                    details=f"Primary metric value ({val1:.1f}) exceeded the configured demonstration boundary.",
                     recommendation="Review the demonstration rule and supplied synthetic measurement.",
                 )
             )
@@ -124,7 +124,7 @@ class EndoscopicSeverityScorerAgent:
                     agent_name="EndoscopicSeverityScorerAgent",
                     severity=Severity.CRITICAL,
                     title="Urgent Consensus Protocol Trigger",
-                    details=f"Secondary parameter index ({val2:.1f}) triggered automated supervisory escalation.",
+                    details=f"Secondary parameter index ({val2:.1f}) triggered a demonstration alert; no escalation was sent.",
                     recommendation="This example triggers no real clinical notification.",
                 )
             )
@@ -190,7 +190,7 @@ class IBDCoordinator:
     def query_assistant(self, user_query: str) -> str:
         q = user_query.strip().lower()
         if "summary" in q or "status" in q:
-            return f"IBD-Sentinel Demonstration Rule Engine currently tracking {len(self.case_registry)} cases in local air-gapped memory."
+            return f"IBD-Sentinel Demonstration Rule Engine currently tracking {len(self.case_registry)} cases in local in-process memory."
         elif "guidelines" in q or "protocol" in q:
             return "This software does not implement validated IBD clinical guidelines; its numerical limits are demonstration thresholds."
         else:
@@ -223,7 +223,7 @@ def create_app():
 
         @app.get("/health")
         def health():
-            return {"status": "HEALTHY", "system": "ibd-flare-biomarker-agent", "version": "1.0.0"}
+            return {"status": "HEALTHY", "system": "ibd-flare-biomarker-agent", "version": "2.0.0"}
 
         @app.post("/api/audit")
         def api_audit(req: AuditRequest):
@@ -276,7 +276,7 @@ def main(argv=None):
         }
         dossier = coordinator.audit_case(payload)
         print("=" * 80)
-        print(f"  IBD-SENTINEL: FECAL CALPROTECTIN, ENDOSCOPIC MAYO & HARVEY-BRADSHAW FLARE AGENT")
+        print(f"  IBD-SENTINEL: DEMONSTRATION RULE ENGINE")
         print(f"  Case: {dossier['case_id']} | Status: [{dossier['overall_status']}] | Alerts: {dossier['total_alerts']}")
         print("=" * 80)
         for a in dossier["alerts"]:

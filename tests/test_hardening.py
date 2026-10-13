@@ -1,6 +1,4 @@
 """Regression tests for audit integrity, input validation, and API transparency."""
-import math
-
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError

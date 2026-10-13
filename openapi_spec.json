@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Ibd Flare Biomarker Engine API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
-    "version": "3.0.0-ENTERPRISE",
+    "title": "IBD Flare Biomarker Agent Demonstration API",
+    "description": "Generic, unvalidated rule evaluation with heuristic identifier screening. Not for patient care.",
+    "version": "2.0.0",
     "contact": {
       "name": "Dr. Abu Suraih Sakhri",
       "url": "https://github.com/abusuraihsakhri"
@@ -15,7 +15,7 @@
         "summary": "Health and metadata check",
         "responses": {
           "200": {
-            "description": "System optimal"
+            "description": "Local service health"
           }
         }
       }
@@ -25,14 +25,14 @@
         "summary": "Prometheus operational metrics",
         "responses": {
           "200": {
-            "description": "Prometheus text metrics"
+            "description": "Prometheus text metrics from in-memory counters"
           }
         }
       }
     },
     "/api/audit": {
       "post": {
-        "summary": "Dispatch task payload across specialized workers",
+        "summary": "Evaluate synthetic metric payload with generic demonstration rules",
         "requestBody": {
           "content": {
             "application/json": {
@@ -69,14 +69,23 @@
         },
         "responses": {
           "200": {
-            "description": "Consensus dossier with HMAC signature"
+            "description": "Rule dossier with in-memory HMAC audit hash"
+          },
+          "400": {
+            "description": "Matched a screened identifier"
+          },
+          "413": {
+            "description": "Exceeds supported screening length"
+          },
+          "422": {
+            "description": "Invalid payload or non-finite metric"
           }
         }
       }
     },
     "/api/chat": {
       "post": {
-        "summary": "Air-gapped supervisory conversational assistant",
+        "summary": "Deterministic mock only; no real language model",
         "requestBody": {
           "content": {
             "application/json": {
@@ -96,7 +105,7 @@
         },
         "responses": {
           "200": {
-            "description": "Supervisory response"
+            "description": "Mock status or preview response"
           }
         }
       }

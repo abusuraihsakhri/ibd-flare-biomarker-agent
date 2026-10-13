@@ -5,9 +5,9 @@ services:
     build: .
     container_name: ibd-flare-biomarker-engine
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      - AUDIT_SECRET_KEY=${AUDIT_SECRET_KEY:-change-me-in-production}
+      - AUDIT_SECRET_KEY=${AUDIT_SECRET_KEY:?Set a strong AUDIT_SECRET_KEY before starting}
       - MODEL_PROVIDER=mock
     restart: unless-stopped
     healthcheck:

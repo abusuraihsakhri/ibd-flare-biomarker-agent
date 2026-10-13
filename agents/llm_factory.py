@@ -1,5 +1,5 @@
 """
-Inference Engine supporting local Ollama, Claude, OpenAI, and deterministic Mock with Zero-PHI checks.
+Deterministic mock inference adapter; external providers are not implemented.
 """
 from typing import Dict, Any, Optional
 from .base import PHIGuard
@@ -11,7 +11,7 @@ class MockLLM:
 
     def invoke(self, prompt: str) -> str:
         PHIGuard.assert_no_phi(prompt)
-        return f"[{self.system_name} Deterministic Verification Engine]: Clinical & scientific analysis verified for query: '{prompt[:60]}...'. Parameters evaluated under AASLD / ACG / Chicago Classification v4.0."
+        return f"[{self.system_name} mock]: No clinical evaluation or language-model inference was performed. Input preview: {prompt[:60]!r}."
 
 
 class LLMFactory:
@@ -22,10 +22,8 @@ class LLMFactory:
         prov = str(provider).lower()
         if prov in ["mock", "deterministic", "test"]:
             return MockLLM(system_name)
-        elif prov in ["ollama", "local"]:
-            return MockLLM(system_name)
-        elif prov in ["claude", "anthropic"]:
-            return MockLLM(system_name)
-        elif prov in ["openai", "gpt4"]:
-            return MockLLM(system_name)
-        return MockLLM(system_name)
+        if prov in {"ollama", "local", "claude", "anthropic", "openai", "gpt4"}:
+            raise NotImplementedError(
+                f"Provider {prov!r} is not implemented. Use 'mock' for offline demonstrations."
+            )
+        raise ValueError(f"Unknown model provider: {provider!r}")

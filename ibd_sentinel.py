@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent
-Integrates fecal calprotectin (mcg/g), SES-CD, and Mayo endoscopic subscores with therapeutic drug monitoring (infliximab/vedolizumab troughs).
+IBD-Sentinel Demonstration Rule Engine
+Demonstrates generic numerical rules; does not calculate validated IBD biomarkers, scores, or therapeutic drug levels.
 
 Domain: Gastroenterology
 Author: Dr. Abu Suraih Sakhri
@@ -12,6 +12,7 @@ import argparse
 import csv
 import datetime
 import json
+import math
 import sys
 import uuid
 from enum import Enum
@@ -27,21 +28,21 @@ class Severity(str, Enum):
 
 
 # ==============================================================================
-# ENRICHED CLINICAL KNOWLEDGE BASE & TELEMETRY ARBITRATION (Dr. Abu Suraih Sakhri)
+# GENERIC RULE DEMONSTRATION METADATA
 # ==============================================================================
 
 class DomainKnowledgeRegistry:
-    """Enterprise domain rules, guideline matrices, and evidence benchmarks."""
-    SYSTEM_VERSION = "2.0.0-PRO-CLINICAL"
-    ZERO_PHI_COMPLIANCE = True
-    HIPAA_SAFE_HARBOR = "ACTIVE_ON_PREMISES"
+    """Demonstration rules; no guideline validation or HIPAA certification."""
+    SYSTEM_VERSION = "2.0.0-DEMO"
+    ZERO_PHI_COMPLIANCE = False
+    HIPAA_SAFE_HARBOR = "NOT_ASSESSED"
 
     @staticmethod
     def audit_security_and_integrity(payload: Dict[str, Any]) -> List[str]:
         warnings = []
         for key in payload.keys():
             if any(phi_keyword in key.lower() for phi_keyword in ["patient_name", "ssn", "mrn_raw", "dob_raw"]):
-                warnings.append(f"PHI_DEFENSE_TRIGGERED: Direct identifier '{key}' masked to synthetic token.")
+                warnings.append(f"IDENTIFIER_WARNING: Field '{key}' requires removal before use.")
         return warnings
 
 class AgentAlert:
@@ -66,14 +67,36 @@ class AgentAlert:
         }
 
 
+def parse_boolean(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        value = value.strip().lower()
+        if value in ("1", "true", "yes"):
+            return True
+        if value in ("", "0", "false", "no"):
+            return False
+    raise ValueError("Boolean value must be true/false, yes/no, or 1/0")
+
+
+def parse_finite_metric(value: Any, name: str) -> float:
+    """Never silently substitute nominal values for invalid metrics."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be numeric") from exc
+    if not math.isfinite(number):
+        raise ValueError(f"{name} must be finite")
+    return number
+
+
 class CalprotectinKineticsAgent:
     """Specialized Sub-Agent 1 for ibd-flare-biomarker-agent"""
     def evaluate(self, payload: Dict[str, Any]) -> List[AgentAlert]:
         alerts = []
-        try:
-            val1 = float(payload.get("metric_primary", 15.0))
-        except (TypeError, ValueError):
-            val1 = 15.0
+        val1 = parse_finite_metric(payload.get("metric_primary", 15.0), "metric_primary")
         if val1 > 20.0:
             alerts.append(
                 AgentAlert(
@@ -81,8 +104,8 @@ class CalprotectinKineticsAgent:
                     agent_name="CalprotectinKineticsAgent",
                     severity=Severity.WARNING,
                     title="Primary Metric Threshold Discrepancy",
-                    details=f"Primary metric value ({val1:.1f}) exceeded standard clinical baseline.",
-                    recommendation="Perform secondary cross-check and review calibration profile.",
+                    details=f"Primary metric value ({val1:.1f}) exceeded the configured demonstration boundary.",
+                    recommendation="Review the demonstration rule and supplied synthetic measurement.",
                 )
             )
         return alerts
@@ -92,11 +115,8 @@ class EndoscopicSeverityScorerAgent:
     """Specialized Sub-Agent 2 for ibd-flare-biomarker-agent"""
     def evaluate(self, payload: Dict[str, Any]) -> List[AgentAlert]:
         alerts = []
-        is_critical = bool(payload.get("critical_flag", False))
-        try:
-            val2 = float(payload.get("metric_secondary", 5.0))
-        except (TypeError, ValueError):
-            val2 = 5.0
+        is_critical = parse_boolean(payload.get("critical_flag", False))
+        val2 = parse_finite_metric(payload.get("metric_secondary", 5.0), "metric_secondary")
         if is_critical or val2 > 12.0:
             alerts.append(
                 AgentAlert(
@@ -104,8 +124,8 @@ class EndoscopicSeverityScorerAgent:
                     agent_name="EndoscopicSeverityScorerAgent",
                     severity=Severity.CRITICAL,
                     title="Urgent Consensus Protocol Trigger",
-                    details=f"Secondary parameter index ({val2:.1f}) triggered automated supervisory escalation.",
-                    recommendation="Initiate mandatory closed-loop clinical notification protocol.",
+                    details=f"Secondary parameter index ({val2:.1f}) triggered a demonstration alert; no escalation was sent.",
+                    recommendation="This example triggers no real clinical notification.",
                 )
             )
         return alerts
@@ -124,7 +144,7 @@ class BiologicTroughAuditorAgent:
                     severity=Severity.ADVISORY,
                     title="Biomarker / Feature Discordance Flag",
                     details=f"Phenotypic discordance noted in observation status ({status_text}).",
-                    recommendation="Reconcile correlative findings with secondary confirmatory testing.",
+                    recommendation="Review the demonstration status descriptor.",
                 )
             )
         return alerts
@@ -149,7 +169,7 @@ class IBDCoordinator:
         critical_count = sum(1 for a in all_alerts if a.severity == Severity.CRITICAL)
         warning_count = sum(1 for a in all_alerts if a.severity == Severity.WARNING)
 
-        overall_status = "CRITICAL_ACTION_REQUIRED" if critical_count > 0 else ("WARNING_ACTIVE" if warning_count > 0 else "CONCORDANT_NORMAL")
+        overall_status = "CRITICAL_ACTION_REQUIRED" if critical_count > 0 else ("WARNING_ACTIVE" if all_alerts else "CONCORDANT_NORMAL")
 
         dossier = {
             "system": "ibd-flare-biomarker-agent",
@@ -170,11 +190,11 @@ class IBDCoordinator:
     def query_assistant(self, user_query: str) -> str:
         q = user_query.strip().lower()
         if "summary" in q or "status" in q:
-            return f"IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent currently tracking {len(self.case_registry)} cases in local air-gapped memory."
+            return f"IBD-Sentinel Demonstration Rule Engine currently tracking {len(self.case_registry)} cases in local in-process memory."
         elif "guidelines" in q or "protocol" in q:
-            return "All sub-agents operate under validated consensus clinical algorithms and CAP/CLSI/NCCN/WHO standards."
+            return "This software does not implement validated IBD clinical guidelines; its numerical limits are demonstration thresholds."
         else:
-            return f"IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent executive agent online. Continuous supervisory monitoring active across all domain parameters."
+            return f"IBD-Sentinel demonstration is available for manual evaluations; continuous monitoring is not implemented."
 
 
 coordinator = IBDCoordinator()
@@ -183,18 +203,18 @@ coordinator = IBDCoordinator()
 def create_app():
     try:
         from fastapi import FastAPI
-        from pydantic import BaseModel
+        from pydantic import BaseModel, Field
 
         app = FastAPI(
-            title="IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent",
-            description="Integrates fecal calprotectin (mcg/g), SES-CD, and Mayo endoscopic subscores with therapeutic drug monitoring (infliximab/vedolizumab troughs).",
-            version="1.0.0",
+            title="IBD-Sentinel Demonstration Rule Engine",
+            description="Demonstrates generic numerical rules; does not calculate validated IBD biomarkers, scores, or therapeutic drug levels.",
+            version="2.0.0",
         )
 
         class AuditRequest(BaseModel):
             case_id: Optional[str] = None
-            metric_primary: float = 15.0
-            metric_secondary: float = 5.0
+            metric_primary: float = Field(15.0, allow_inf_nan=False)
+            metric_secondary: float = Field(5.0, allow_inf_nan=False)
             critical_flag: bool = False
             status_text: str = "NORMAL"
 
@@ -203,7 +223,7 @@ def create_app():
 
         @app.get("/health")
         def health():
-            return {"status": "HEALTHY", "system": "ibd-flare-biomarker-agent", "version": "1.0.0"}
+            return {"status": "HEALTHY", "system": "ibd-flare-biomarker-agent", "version": "2.0.0"}
 
         @app.post("/api/audit")
         def api_audit(req: AuditRequest):
@@ -219,7 +239,7 @@ def create_app():
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="ibd-flare-biomarker-agent", description="IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent")
+    parser = argparse.ArgumentParser(prog="ibd-flare-biomarker-agent", description="IBD-Sentinel Demonstration Rule Engine")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Audit
@@ -256,7 +276,7 @@ def main(argv=None):
         }
         dossier = coordinator.audit_case(payload)
         print("=" * 80)
-        print(f"  IBD-SENTINEL: FECAL CALPROTECTIN, ENDOSCOPIC MAYO & HARVEY-BRADSHAW FLARE AGENT")
+        print(f"  IBD-SENTINEL: DEMONSTRATION RULE ENGINE")
         print(f"  Case: {dossier['case_id']} | Status: [{dossier['overall_status']}] | Alerts: {dossier['total_alerts']}")
         print("=" * 80)
         for a in dossier["alerts"]:
@@ -286,7 +306,12 @@ def main(argv=None):
         out_rows = []
         for r in rows:
             try:
-                dossier = coordinator.audit_case(dict(r))
+                data = dict(r)
+                data["critical_flag"] = parse_boolean(
+                    data.get("critical_flag", data.get("is_stat", False))
+                )
+                data["status_text"] = data.get("status_text", data.get("status_flag", "NORMAL"))
+                dossier = coordinator.audit_case(data)
             except Exception as e:
                 print(f"Warning: Skipping row due to error: {e}", file=sys.stderr)
                 continue
@@ -309,7 +334,7 @@ def main(argv=None):
             import uvicorn
             app = create_app()
             if app:
-                print(f"Starting IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent on http://{args.host}:{args.port}")
+                print(f"Starting IBD-Sentinel Demonstration Rule Engine on http://{args.host}:{args.port}")
                 uvicorn.run(app, host=args.host, port=args.port)
         except ImportError:
             print("FastAPI / uvicorn not installed. Run 'pip install fastapi uvicorn'")

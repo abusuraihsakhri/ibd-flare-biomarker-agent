@@ -1,5 +1,5 @@
 """
-Enterprise Security, PHI Outbound Guard, and HMAC-SHA256 Audit Trail.
+Heuristic identifier screening and in-memory HMAC-SHA256 audit trail.
 
 """
 import os
@@ -10,9 +10,10 @@ import hmac
 import hashlib
 import secrets
 import logging
+import copy
+import threading
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ PHI_PATTERNS = [
 
 
 class SecurityException(Exception):
-    """Raised when outbound data violates HIPAA Safe Harbor or contains raw PHI."""
+    """Raised when an input matches a common identifier pattern (not full de-identification)."""
     pass
 
 
@@ -43,7 +44,9 @@ MAX_PHI_SCAN_LENGTH = 100_000  # Guard against memory abuse on huge strings
 def assert_no_phi(text: str) -> None:
     if not text:
         return
-    candidate = str(text)[:MAX_PHI_SCAN_LENGTH]
+    candidate = str(text)
+    if len(candidate) > MAX_PHI_SCAN_LENGTH:
+        raise ResourceLimitExceededException("Identifier or metadata exceeds allowed scan length")
     for pattern in PHI_PATTERNS:
         if pattern.search(candidate):
             raise SecurityException(
@@ -79,9 +82,16 @@ class AuditTrail:
                 "Set the AUDIT_SECRET_KEY environment variable for persistent audit integrity."
             )
         self.logs: List[Dict[str, Any]] = []
+        self._lock = threading.RLock()
 
     def log(self, actor: str, actor_tier: str, event_type: str, details: Dict[str, Any]) -> Dict[str, Any]:
-        payload_str = json.dumps(details, sort_keys=True)
+        with self._lock:
+            return self._log_unlocked(actor, actor_tier, event_type, details)
+
+    def _log_unlocked(self, actor: str, actor_tier: str, event_type: str, details: Dict[str, Any]) -> Dict[str, Any]:
+        for value in (actor, actor_tier, event_type):
+            assert_no_phi(value)
+        payload_str = json.dumps(details, sort_keys=True, allow_nan=False)
         assert_no_phi(payload_str)
         payload_hash = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
         audit_id = f"AUDIT-{int(time.time()*1000)}-{len(self.logs)+1}"
@@ -103,14 +113,36 @@ class AuditTrail:
         return entry
 
     def verify_integrity(self) -> bool:
-        for i, entry in enumerate(self.logs):
-            prev = self.logs[i-1]["current_hash"] if i > 0 else "GENESIS_BLOCK_0000000000000000"
-            if entry["prev_hash"] != prev:
+        with self._lock:
+            return self._verify_integrity_unlocked()
+
+    def _verify_integrity_unlocked(self) -> bool:
+        """Verify both chain links and every HMAC signature, not only pointers."""
+        prev = "GENESIS_BLOCK_0000000000000000"
+        required = (
+            "audit_id", "timestamp", "actor", "actor_tier",
+            "event_type", "payload_hash", "prev_hash", "current_hash",
+        )
+        for entry in self.logs:
+            if not isinstance(entry, dict) or set(entry) != set(required) or any(
+                not isinstance(entry.get(k), str) for k in required
+            ):
                 return False
+            if not hmac.compare_digest(entry["prev_hash"], prev):
+                return False
+            sign_string = "|".join(entry[k] for k in required[:-1])
+            expected = hmac.new(
+                self.secret_key, sign_string.encode("utf-8"), hashlib.sha256
+            ).hexdigest()
+            if not hmac.compare_digest(entry["current_hash"], expected):
+                return False
+            prev = entry["current_hash"]
         return True
 
     def get_trail(self) -> List[Dict[str, Any]]:
-        return self.logs
+        """Return a snapshot; callers cannot mutate stored audit records."""
+        with self._lock:
+            return copy.deepcopy(self.logs)
 
 
 GLOBAL_AUDIT = AuditTrail()

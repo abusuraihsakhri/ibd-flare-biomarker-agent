@@ -1,5 +1,5 @@
 """
-FastAPI REST Application & Webhooks for IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent.
+FastAPI REST Application & Webhooks for IBD-Sentinel Demonstration Rule Engine.
 """
 from typing import Dict, Any, Optional
 from .models import ClinicalCasePayload
@@ -10,30 +10,30 @@ coordinator = IBDCoordinator()
 def create_app():
     try:
         from fastapi import FastAPI
-        from pydantic import BaseModel
+        from pydantic import BaseModel, Field
 
         app = FastAPI(
-            title="IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent",
-            description="Integrates fecal calprotectin (mcg/g), SES-CD, and Mayo endoscopic subscores with therapeutic drug monitoring (infliximab/vedolizumab troughs).",
-            version="2.0.0-PRO",
+            title="IBD-Sentinel Demonstration Rule Engine",
+            description="Demonstrates generic numerical rules; does not calculate validated IBD biomarkers, scores, or therapeutic drug levels.",
+            version="2.0.0",
         )
 
         class AuditRequest(BaseModel):
             case_id: str = "CASE-2026-001"
             patient_synthetic_id: str = "SYNTH-PT-881"
-            primary_metric: float = 24.5
-            secondary_metric: float = 14.0
+            primary_metric: float = Field(24.5, allow_inf_nan=False)
+            secondary_metric: float = Field(14.0, allow_inf_nan=False)
             status_flag: str = "DISCORDANT"
             is_stat: bool = True
             clinical_notes: str = ""
-            biomarkers: Dict[str, Any] = {}
+            biomarkers: Dict[str, Any] = Field(default_factory=dict)
 
         class ChatRequest(BaseModel):
             query: str
 
         @app.get("/health")
         def health():
-            return {"status": "HEALTHY", "system": "ibd-flare-biomarker-agent", "domain": "Gastroenterology", "version": "2.0.0-PRO"}
+            return {"status": "HEALTHY", "system": "ibd-flare-biomarker-agent", "domain": "Gastroenterology", "version": "2.0.0"}
 
         @app.post("/api/audit")
         def api_audit(req: AuditRequest):

@@ -1,7 +1,7 @@
 """
 Clinical Algorithmic Engine & Guideline Rules for IBD-Sentinel: Fecal Calprotectin, Endoscopic Mayo & Harvey-Bradshaw Flare Agent.
 Domain: Gastroenterology
-Standard: ACG / AGA Clinical Guidelines & Chicago v4.0
+Standard: unvalidated demonstration rules
 """
 import math
 from typing import Dict, Any, List, Optional
@@ -9,27 +9,31 @@ from .models import ClinicalCasePayload, AgentAlert, UrgencyLevel, ClinicalInteg
 
 
 class ClinicalDomainEngine:
-    GUIDELINE = "ACG / AGA Clinical Guidelines & Chicago v4.0"
+    GUIDELINE = "unvalidated demonstration rules"
     PRIMARY_BASELINE_LIMIT = 20.0
     SECONDARY_ALERT_LIMIT = 10.0
 
     @classmethod
     def evaluate_primary_index(cls, value: float) -> Optional[Dict[str, Any]]:
+        if not math.isfinite(value):
+            raise ValueError("primary_metric must be finite")
         if value > cls.PRIMARY_BASELINE_LIMIT:
             return {
                 "title": "Primary Metric Threshold Exceeded",
-                "finding": f"Observed value ({value:.2f}) exceeds ACG / AGA Clinical Guidelines & Chicago v4.0 clinical baseline limit ({cls.PRIMARY_BASELINE_LIMIT:.1f}).",
+                "finding": f"Observed value ({value:.2f}) exceeds unvalidated demonstration rules demonstration limit ({cls.PRIMARY_BASELINE_LIMIT:.1f}).",
                 "recommendation": "Perform immediate secondary verification and calibration review.",
             }
         return None
 
     @classmethod
     def evaluate_secondary_kinetics(cls, value: float, is_stat: bool) -> Optional[Dict[str, Any]]:
+        if not math.isfinite(value):
+            raise ValueError("secondary_metric must be finite")
         if value > cls.SECONDARY_ALERT_LIMIT or is_stat:
             return {
                 "title": "STAT Kinetic Escalation Triggered",
                 "finding": f"Kinetic parameter ({value:.2f}) with STAT={is_stat} requires prioritized supervision.",
-                "recommendation": "Activate closed-loop verbal clinician notification protocol per Joint Commission standards.",
+                "recommendation": "Demonstration flag only; no clinical notification is performed.",
             }
         return None
 
@@ -40,6 +44,6 @@ class ClinicalDomainEngine:
             return {
                 "title": "Phenotypic / Biomarker Discordance Identified",
                 "finding": f"Status flag '{status_flag}' indicates divergence from standard diagnostic concordance.",
-                "recommendation": f"Order reflex confirmatory testing per ACG / AGA Clinical Guidelines & Chicago v4.0 clinical recommendations.",
+                "recommendation": f"Review the synthetic inputs and source data.",
             }
         return None

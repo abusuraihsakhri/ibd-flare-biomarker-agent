@@ -103,3 +103,6 @@ def test_api_audit_and_phi_error_handling():
     assert "MRN-123456" not in blocked.text
     assert client.post("/api/audit", json=dict(clean, primary_metric="nan")).status_code == 422
     assert client.get("/api/audit/logs").json()["verified"] is True
+    metrics = client.get("/metrics")
+    assert metrics.status_code == 200
+    assert "system_tasks_total" in metrics.text
